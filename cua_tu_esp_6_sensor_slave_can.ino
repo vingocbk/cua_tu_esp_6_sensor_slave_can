@@ -22,6 +22,7 @@ void getStatus(){
 
 void motor_init(){
     //set varialble
+    control_motor.normal_mode = true;
     control_motor.forward = true;
     control_motor.daytay = true;
     control_motor.first_run = true;
@@ -783,6 +784,130 @@ void receiveDataCan(){
     }
 }
 
+String MacID(){
+    uint8_t mac[WL_MAC_ADDR_LENGTH];
+    String macID;
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPmacAddress(mac);
+    macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) + String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
+    macID.toUpperCase();
+    return macID;
+}
+
+void SetupConfigMode(){
+    ECHOLN("[WifiService][setupAP] Open AP....");
+    WiFi.softAPdisconnect();
+    WiFi.disconnect();
+    server.close();
+    delay(500);
+    WiFi.mode(WIFI_AP_STA);
+    String SSID_AP_MODE = SSID_PRE_AP_MODE + MacID();
+    WiFi.softAP(SSID_AP_MODE.c_str(), PASSWORD_AP_MODE);
+    IPAddress APIP(192, 168, 4, 1);
+    IPAddress gateway(192, 168, 4, 1);
+    IPAddress subnet(255, 255, 255, 0);
+    WiFi.softAPConfig(APIP, gateway, subnet);
+    ECHOLN(SSID_AP_MODE);
+
+    ECHOLN("[WifiService][setupAP] Softap is running!");
+    IPAddress myIP = WiFi.softAPIP();
+    ECHO("[WifiService][setupAP] IP address: ");
+    ECHOLN(myIP);
+}
+
+
+void StartConfigServer(){    
+    ECHOLN("[HttpServerH][startConfigServer] Begin create new server...");
+    server.on("/config", HTTP_POST, ConfigMode);
+
+
+    /*return index page which is stored in serverIndex */
+    server.on("/", HTTP_GET, []() {
+        server.sendHeader("Connection", "close");
+        server.send(200, "text/html", loginIndex);
+    });
+    server.on("/serverIndex", HTTP_GET, []() {
+        server.sendHeader("Connection", "close");
+        server.send(200, "text/html", serverIndex);
+    });
+    /*handling uploading firmware file */
+    server.on("/update", HTTP_POST, []() {
+        server.sendHeader("Connection", "close");
+        server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+        ESP.restart();
+    }, []() {
+        HTTPUpload& upload = server.upload();
+        if (upload.status == UPLOAD_FILE_START) {
+        Serial.printf("Update: %s\n", upload.filename.c_str());
+            if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+                Update.printError(Serial);
+            }
+        } else if (upload.status == UPLOAD_FILE_WRITE) {
+        /* flashing firmware to ESP*/
+            if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+                Update.printError(Serial);
+            }
+        } else if (upload.status == UPLOAD_FILE_END) {
+            if (Update.end(true)) { //true to set the size to the current progress
+                Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+            } else {
+                Update.printError(Serial);
+            }
+        }
+    });
+
+
+    server.begin();
+    ECHOLN("[HttpServerH][startConfigServer] HTTP server started");
+}
+
+void ConfigMode(){
+    StaticJsonBuffer<RESPONSE_LENGTH> jsonBuffer;
+    ECHOLN(server.arg("plain"));
+    JsonObject& rootData = jsonBuffer.parseObject(server.arg("plain"));
+    ECHOLN("--------------");
+    if (rootData.success()) {
+        server.sendHeader("Access-Control-Allow-Headers", "*");
+        server.sendHeader("Access-Control-Allow-Origin", "*");
+        server.send(200, "application/json; charset=utf-8", "{\"status\":\"success\"}");
+        
+        String nid = rootData["deviceid"];
+
+        control_motor.device_id = nid.toInt();
+
+        ECHOLN("");
+        ECHOLN("writing eeprom device id:"); 
+        ECHO("Wrote: ");
+        EEPROM.write(EEPROM_DEVICE_ID, control_motor.device_id);
+        ECHOLN(control_motor.device_id);
+
+
+        EEPROM.commit();
+        ECHOLN("Done writing!");
+
+        control_motor.normal_mode = true;
+        tickerSetApMode.stop();
+        digitalWrite(ledTestWifi, HIGH);
+
+    }
+    ECHOLN("Wrong data!!!");
+}
+
+
+void checkButtonConfigClick(){
+    //hold to config mode
+    if(digitalRead(PIN_CONFIG) == HIGH){
+        configAPmode.time_click_button_config = millis();
+    }
+    if(digitalRead(PIN_CONFIG) == LOW && (configAPmode.time_click_button_config + CONFIG_HOLD_TIME) <= millis()){
+        configAPmode.time_click_button_config = millis();
+        tickerSetApMode.start();
+        control_motor.normal_mode = false;
+        SetupConfigMode();
+        StartConfigServer();
+    }
+}
+
 void setup() {
   // put your setup code here, to run once:
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
@@ -790,9 +915,9 @@ void setup() {
     EEPROM.begin(EEPROM_WIFI_MAX_CLEAR);
 
      
-    ledcSetup(LED_CHANNEL_R, 5000, 8); // 1 kHz PWM, 8-bit resolution
-    ledcSetup(LED_CHANNEL_G, 5000, 8); // 1 kHz PWM, 8-bit resolution
-    ledcSetup(LED_CHANNEL_B, 5000, 8); // 1 kHz PWM, 8-bit resolution
+    ledcSetup(LED_CHANNEL_R, 1000, 8); // 1 kHz PWM, 8-bit resolution
+    ledcSetup(LED_CHANNEL_G, 1000, 8); // 1 kHz PWM, 8-bit resolution
+    ledcSetup(LED_CHANNEL_B, 1000, 8); // 1 kHz PWM, 8-bit resolution
     ledcSetup(MOTOR_CHANNEL, 30000, 8); // 30 kHz PWM, 8-bit resolution
 
     ledcAttachPin(PIN_LED_LIGHT_R, LED_CHANNEL_R); // analog pin to channel led_R
@@ -850,9 +975,12 @@ void loop() {
         checkAutoClose();
     }
     checkAnalogReadButton();
+    checkButtonConfigClick();
     setSpeedControl();
     receiveDataCan();
     tickerupdate();
-
+    if(!control_motor.normal_mode){
+        server.handleClient();
+    }
 
 }

@@ -1,9 +1,13 @@
 #include "AppDebug.h"
 #include <Arduino.h>
 #include "Ticker.h"
+#include "WebServer.h"
+#include "WiFi.h"
 #include "EEPROM.h"
 #include <ESP32CAN.h>
 #include <CAN_config.h>
+#include "EspOTA.h"
+#include "ArduinoJson.h"
 
 #include "soc/soc.h"  //Brownout detector was triggered
 #include "soc/rtc_cntl_reg.h"
@@ -23,12 +27,16 @@
 #define PIN_CONFIG 0
 #define PIN_TOUCH_SENSOR T5
 #define PIN_LED_LIGHT_R 22
-#define PIN_LED_LIGHT_G 5
-#define PIN_LED_LIGHT_B 23
+#define PIN_LED_LIGHT_G 23  //5 with design
+#define PIN_LED_LIGHT_B 5   //23 with design
 #define LED_CHANNEL_R 1
 #define LED_CHANNEL_G 2
 #define LED_CHANNEL_B 3
 #define MOTOR_CHANNEL 4
+
+#define WL_MAC_ADDR_LENGTH 6
+#define SSID_PRE_AP_MODE "AvyInterior-"
+#define PASSWORD_AP_MODE "123456789"
 
 // old motor
 // #define QUAY_THUAN HIGH
@@ -87,6 +95,9 @@
 #define CONFIG_HOLD_TIME 5000
 #define TIME_CHECK_ANALOG 500       //500ms check 1 lan
 
+#define HTTP_PORT 80
+WebServer server(HTTP_PORT);
+
 //normal mode
 void getStatus();
 void motor_init();
@@ -116,6 +127,11 @@ void receiveDataCan();
 
 
 void setLedApMode();
+void checkButtonConfigClick();
+void SetupConfigMode();
+void StartConfigServer();
+void ConfigMode();                  //nhan data tu app
+String MacID();
 
 struct motor
 {
@@ -170,6 +186,13 @@ struct led
   int count_change_led;
   bool status_led;
 }control_led;
+
+struct config
+{
+  /* data */
+  uint32_t time_click_button_config;
+}configAPmode;
+
 
 CAN_device_t CAN_cfg;               // CAN Config
 const int rx_queue_size = 10;       // Receive Queue size
