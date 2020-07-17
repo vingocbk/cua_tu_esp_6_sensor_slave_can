@@ -91,7 +91,7 @@ void motor_init(){
 
     //value error analog 
     control_motor.define_error_analog = EEPROM.read(EEPROM_VALUE_ERROR_ANALOG);
-    if(control_motor.define_error_analog == 0){
+    if(control_motor.define_error_analog == 0 || control_motor.define_error_analog == 255){
         control_motor.define_error_analog = 100;
     }
     ECHO("define Error Analog Read: ");
@@ -191,7 +191,8 @@ void Stop(){
     //reset_value_analog
     control_motor.value_error_analog = analogRead(ANALOG_READ_BUTTON);
     control_motor.pre_value_error_analog = control_motor.value_error_analog;
-
+    // ECHO("pre_value_error_analog: ");
+    // ECHOLN(control_motor.pre_value_error_analog);
     getStatus();
 
 
@@ -629,6 +630,7 @@ void checkAnalogReadButton(){
     if(control_motor.status_stop && control_motor.forward && control_motor.count_pul_FG <= 3 && abs(millis() - control_motor.time_check_analog) > TIME_CHECK_ANALOG){
         control_motor.time_check_analog = millis();
         control_motor.value_error_analog = analogRead(ANALOG_READ_BUTTON);
+        // ECHOLN(control_motor.value_error_analog);
         if(abs(control_motor.value_error_analog - control_motor.pre_value_error_analog) > control_motor.define_error_analog){
             for(int i = 0; i < control_motor.time_delay_analog; i++){
                 control_motor.value_error_analog = analogRead(ANALOG_READ_BUTTON);
@@ -913,7 +915,7 @@ void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
     Serial.begin(115200);
     EEPROM.begin(EEPROM_WIFI_MAX_CLEAR);
-
+    // analogSetClockDiv(255);
      
     ledcSetup(LED_CHANNEL_R, 1000, 8); // 1 kHz PWM, 8-bit resolution
     ledcSetup(LED_CHANNEL_G, 1000, 8); // 1 kHz PWM, 8-bit resolution
@@ -966,7 +968,7 @@ void setup() {
 void loop() {
     // put your main code here, to run repeatedly:
 
-    if(!control_motor.forward && control_led.status_led && !control_motor.status_stop  && control_motor.count_pul_FG <= 10){
+    if(!control_motor.forward && control_led.status_led && !control_motor.status_stop  && control_motor.count_pul_FG <= 15){
         control_led.status_led = false;
         tickerSetPwmLedLightOn.stop();
         tickerSetPwmLedLightOff.start();

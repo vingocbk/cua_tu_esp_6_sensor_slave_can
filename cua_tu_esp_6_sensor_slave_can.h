@@ -23,7 +23,7 @@
 #define inputFG 21
 #define PWM 18
 #define DIR 19
-#define ANALOG_READ_BUTTON 34
+#define ANALOG_READ_BUTTON 13 //34
 #define PIN_CONFIG 0
 #define PIN_TOUCH_SENSOR T5
 #define PIN_LED_LIGHT_R 22
@@ -39,12 +39,12 @@
 #define PASSWORD_AP_MODE "123456789"
 
 // old motor
-// #define QUAY_THUAN HIGH
-// #define QUAY_NGHICH LOW
+#define QUAY_THUAN HIGH
+#define QUAY_NGHICH LOW
 
   // new motor
-#define QUAY_THUAN LOW
-#define QUAY_NGHICH HIGH
+// #define QUAY_THUAN LOW
+// #define QUAY_NGHICH HIGH
 
 #define MINSPEED 20
 
