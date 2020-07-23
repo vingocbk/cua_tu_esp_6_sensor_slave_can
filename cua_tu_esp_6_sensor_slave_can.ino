@@ -106,6 +106,14 @@ void motor_init(){
     ECHO(control_motor.define_time_auto_close);
     ECHOLN("min");
 
+    //stop speed
+    control_motor.stop_speed = EEPROM.read(EEPROM_MIN_STOP_SPEED);
+    if(control_motor.stop_speed == 0 || control_motor.stop_speed == 255){
+        control_motor.stop_speed = 10;
+    }
+    ECHO("Min stop speed: ");
+    ECHOLN(control_motor.stop_speed);
+
 
     control_motor.value_error_analog = analogRead(ANALOG_READ_BUTTON);
     control_motor.pre_value_error_analog = control_motor.value_error_analog;
@@ -209,7 +217,7 @@ void caculateSpeed(){
     
     // ECHO("van toc: ");
     // ECHOLN(speed);
-    if(abs(control_motor.speed_velectory) <= MINSPEED && control_motor.count_calcu_speed >= 5){   //sau 5 lan chay thi moi tinh den van toc
+    if(abs(control_motor.speed_velectory) <= control_motor.stop_speed && control_motor.count_calcu_speed >= 5){   //sau 5 lan chay thi moi tinh den van toc
         ECHOLN("Da dung lai");
         tickerCaculateSpeed.stop();
 
@@ -774,6 +782,13 @@ void receiveDataCan(){
                         ECHO("Writed: ");
                         ECHO(control_motor.define_time_auto_close);
                         EEPROM.write(EEPROM_TIME_AUTO_CLOSE, char(control_motor.define_time_auto_close));
+                        EEPROM.commit();
+                        break;
+                    case MSG_MIN_STOP_SPEED:
+                        control_motor.stop_speed = rx_frame.data.u8[2];
+                        ECHO("Writed: ");
+                        ECHO(control_motor.stop_speed);
+                        EEPROM.write(EEPROM_MIN_STOP_SPEED, char(control_motor.stop_speed));
                         EEPROM.commit();
                         break;
                     default:
