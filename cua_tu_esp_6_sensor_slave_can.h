@@ -39,14 +39,14 @@
 #define PASSWORD_AP_MODE "123456789"
 
 // old motor
-#define QUAY_THUAN HIGH
-#define QUAY_NGHICH LOW
+//#define QUAY_THUAN HIGH
+//#define QUAY_NGHICH LOW
 
   // new motor
-// #define QUAY_THUAN LOW
-// #define QUAY_NGHICH HIGH
+ #define QUAY_THUAN LOW
+ #define QUAY_NGHICH HIGH
 
-#define MINSPEED 10
+#define MINSPEED 5
 
 #define RESPONSE_LENGTH                     2048     //do dai data nhan ve tu tablet
 #define EEPROM_DEVICE_ID                    65

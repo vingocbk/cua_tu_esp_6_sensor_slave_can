@@ -5,7 +5,9 @@
             "includePath": [
                 "C:\\Users\\HPT\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\**",
                 "C:\\Users\\HPT\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\1.0.4\\**",
-                "C:\\Program Files (x86)\\Arduino\\libraries\\**"
+                "C:\\Program Files (x86)\\Arduino\\libraries\\**",
+                "C:\\Users\\vingo\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\1.0.4\\**",
+                "C:\\Users\\vingo\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\**"
             ],
             "forcedInclude": [],
             "intelliSenseMode": "msvc-x64"
