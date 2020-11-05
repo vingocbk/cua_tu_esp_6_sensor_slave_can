@@ -109,7 +109,7 @@ void motor_init(){
     //stop speed
     control_motor.stop_speed = EEPROM.read(EEPROM_MIN_STOP_SPEED);
     if(control_motor.stop_speed == 0 || control_motor.stop_speed == 255){
-        control_motor.stop_speed = 10;
+        control_motor.stop_speed = MINSPEED;
     }
     ECHO("Min stop speed: ");
     ECHOLN(control_motor.stop_speed);
