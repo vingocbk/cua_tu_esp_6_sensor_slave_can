@@ -25,10 +25,10 @@
 #define DIR 19
 #define ANALOG_READ_BUTTON 13 //34
 #define PIN_CONFIG 0
-#define PIN_TOUCH_SENSOR T5
+#define PIN_TOUCH_SENSOR T5   //not use
 #define PIN_LED_LIGHT_R 22
-#define PIN_LED_LIGHT_G 23  //5 with design
-#define PIN_LED_LIGHT_B 5   //23 with design
+#define PIN_LED_LIGHT_G 5  //5 with design
+#define PIN_LED_LIGHT_B 23   //23 with design
 #define LED_CHANNEL_R 1
 #define LED_CHANNEL_G 2
 #define LED_CHANNEL_B 3
@@ -188,6 +188,7 @@ struct led
   int blue_before;
   int count_change_led;
   bool status_led;
+  uint32_t time_save_data_led;
 }control_led;
 
 struct config

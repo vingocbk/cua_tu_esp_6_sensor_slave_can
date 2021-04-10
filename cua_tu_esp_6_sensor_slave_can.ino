@@ -719,6 +719,7 @@ void receiveDataCan(){
                         break;
                     case MSG_CONTROL_LED_HAND:
                         if(control_led.status_led){
+                            control_led.time_save_data_led = millis();
                             control_led.red_after = rx_frame.data.u8[2];
                             control_led.green_after = rx_frame.data.u8[3];
                             control_led.blue_after = rx_frame.data.u8[4];
@@ -996,6 +997,16 @@ void loop() {
     setSpeedControl();
     receiveDataCan();
     tickerupdate();
+
+    //save data control hand led
+    if(millis() > 10000 && millis() == control_led.time_save_data_led + 5000){
+        ECHOLN("save data led");
+        EEPROM.write(EEPROM_WIFI_LED_RED, char(control_led.red_after));
+        EEPROM.write(EEPROM_WIFI_LED_GREEN, char(control_led.green_after));
+        EEPROM.write(EEPROM_WIFI_LED_BLUE, char(control_led.blue_after));
+        EEPROM.commit();
+    }
+
     if(!control_motor.normal_mode){
         server.handleClient();
     }
